@@ -1,5 +1,5 @@
 use clap::Parser;
-use judger::{run, Config};
+use judger::{Config, SeccompRuleName, run};
 
 const VERSION: &str = "0.1.0";
 
@@ -34,7 +34,7 @@ pub(crate) struct Args {
     #[arg(long, help = "Log Path")]
     log_path: Option<String>,
     #[arg(long, help = "Seccomp Rule Name")]
-    seccomp_rule_name: Option<String>,
+    seccomp_rule_name: Option<SeccompRuleName>,
     #[arg(long, help = "UID (default: 65534)")]
     uid: Option<u32>,
     #[arg(long, help = "GID (default: 65534)")]

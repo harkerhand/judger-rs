@@ -1,4 +1,4 @@
-use judger::{child_process, Config, Logger};
+use judger::{Config, Logger, child_process, SeccompRuleName};
 
 fn main() {
     let config = Config {
@@ -16,7 +16,7 @@ fn main() {
         args: vec![],
         env: vec![],
         log_path: "judger.log".to_string(),
-        seccomp_rule_name: Some("c_cpp".to_string()),
+        seccomp_rule_name: Some(SeccompRuleName::CCpp),
         uid: 0,
         gid: 0,
     };

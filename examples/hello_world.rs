@@ -1,5 +1,5 @@
+use judger::{Config, SeccompRuleName, run};
 use std::io::Write;
-use judger::{run, Config};
 
 fn main() {
     let tmp_file_path = "./main.c";
@@ -15,17 +15,16 @@ int main(int argc, char *argv[]) {
         .expect("Unable to write data");
 
     let input_file_path = "1.in";
-    let mut input_file = std::fs::File::create(input_file_path).expect("Unable to create input file");
+    let mut input_file =
+        std::fs::File::create(input_file_path).expect("Unable to create input file");
     let input_data = "World\n";
-    input_file.write_all(input_data.as_bytes())
+    input_file
+        .write_all(input_data.as_bytes())
         .expect("Unable to write input data");
 
     let _ = std::process::Command::new("gcc")
-        .args([
-            tmp_file_path,
-            "-o",
-            "hello_world",
-        ]).output();
+        .args([tmp_file_path, "-o", "hello_world"])
+        .output();
 
     let config = Config {
         max_cpu_time: 1000,
@@ -42,7 +41,7 @@ int main(int argc, char *argv[]) {
         args: vec![],
         env: vec![],
         log_path: "judger.log".to_string(),
-        seccomp_rule_name: Some("c_cpp".to_string()),
+        seccomp_rule_name: Some(SeccompRuleName::CCpp),
         uid: 0,
         gid: 0,
     };
