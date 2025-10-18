@@ -1,5 +1,61 @@
 #![deny(missing_docs)]
 //! A Rust library for sandboxed code execution and resource limitation.
+//! This library provides functionalities to run untrusted code with specified resource limits,
+//! such as CPU time, memory usage, and process count. It also supports seccomp filtering for enhanced security.
+//! # Features
+//! - Configurable resource limits
+//! - Seccomp filtering
+//! - Detailed logging
+//! - Error handling with specific error codes
+//! # Example
+//! ```rust
+//! use judger::{Config, SeccompRuleName, run};
+//! fn main() {
+//!     let config = Config {
+//!         max_cpu_time: 1000,
+//!         max_real_time: 2000,
+//!         max_memory: 128 * 1024 * 1024,
+//!         max_stack: 32 * 1024 * 1024,
+//!         max_process_number: 200,
+//!         max_output_size: 10000,
+//!         memory_limit_check_only: false,
+//!         exe_path: "hello_world".to_string(),
+//!         input_path: "1.in".to_string(),
+//!         output_path: "1.out".to_string(),
+//!         error_path: "1.err".to_string(),
+//!         args: vec![],
+//!         env: vec![],
+//!         log_path: "judger.log".to_string(),
+//!         seccomp_rule_name: Some(SeccompRuleName::CCpp),
+//!         uid: 0,
+//!         gid: 0,
+//!     };
+//!     let result = run(&config);
+//!     println!("{:?}", result);
+//! }
+//! ```
+//! # Modules
+//! - `child`: Handles the child process execution and resource limiting.
+//! - `logger`: Provides logging functionalities.
+//! - `runner`: Manages the overall execution flow.
+//! - `seccomp`: Implements seccomp filtering.
+//! - `utils`: Contains utility functions and error codes.
+//! # Error Handling
+//! The library defines a set of error codes in the `utils` module to represent various failure scenarios.
+//! Users can handle these errors appropriately based on their needs.
+//! # Logging
+//! The `logger` module provides a simple logging mechanism with different log levels.
+//! Users can log messages to a specified log file for debugging and monitoring purposes.
+//! # Security
+//! The library supports seccomp filtering to restrict the system calls that the executed code can make,
+//! enhancing the security of the sandboxed environment.
+//! # License
+//! This library is open-source and available under the MIT License.
+//! Feel free to use and modify it according to your needs.
+//! # Contributions
+//! Contributions are welcome! Please submit issues and pull requests on the [GitHub repository](https://github.com/harkerhand/judger-rs).
+//! # Author
+//! Developed by [harkerhand](https://github.com/harkerhand).
 
 mod child;
 mod logger;
