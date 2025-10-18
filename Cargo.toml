@@ -2,6 +2,13 @@
 name = "judger"
 version = "0.1.0"
 edition = "2024"
+authors = ["harkerhand <harkerhand@outlook.com>"]
+description = "A sandboxed environment for running untrusted code safely."
+license = "MIT"
+repository = "https://github.com/harkerhand/judger-rs"
+readme = "README.md"
+keywords = ["sandbox", "security", "seccomp", "container", "isolation"]
+categories = ["development-tools"]
 
 [dependencies]
 clap = { version = "4.5.49", features = ["derive"] }
