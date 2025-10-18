@@ -1,7 +1,7 @@
 use clap::Parser;
 use judger::{Config, SeccompRuleName, run};
 
-const VERSION: &str = "0.1.0";
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Parser, Debug)]
 #[command(name = "judger", version = VERSION, about = "A Rust-based code execution judger.")]
