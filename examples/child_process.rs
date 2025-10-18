@@ -1,4 +1,4 @@
-use judger::{child_process, Config};
+use judger::{child_process, Config, Logger};
 
 fn main() {
     let config = Config {
@@ -17,9 +17,10 @@ fn main() {
         env: vec![],
         log_path: "judger.log".to_string(),
         seccomp_rule_name: Some("c_cpp".to_string()),
-        uid: 1000,
-        gid: 1000,
+        uid: 0,
+        gid: 0,
     };
-    let result = child_process(&config);
+    let logger = Logger::new(&config.log_path).expect("Failed to create logger");
+    let result = child_process(&config, logger);
     println!("{:?}", result);
 }

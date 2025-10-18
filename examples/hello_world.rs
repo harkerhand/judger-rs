@@ -4,15 +4,13 @@ use judger::{run, Config};
 fn main() {
     let tmp_file_path = "./main.c";
     let mut file = std::fs::File::create(tmp_file_path).expect("Unable to create file");
-    let hello_world_code = r#"
-        #include <stdio.h>
-        int main(int argc, char *argv[]) {
-            char input[1000];
-            scanf("%s", input);
-            printf("Hello %s\n", input);
-            return 0;
-        }
-    "#;
+    let hello_world_code = r#"#include <stdio.h>
+int main(int argc, char *argv[]) {
+    char input[1000];
+    scanf("%s", input);
+    printf("Hello %s\n", input);
+    return 0;
+}"#;
     file.write_all(hello_world_code.as_bytes())
         .expect("Unable to write data");
 

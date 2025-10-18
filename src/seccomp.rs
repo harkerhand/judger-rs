@@ -1,6 +1,5 @@
 use libseccomp::{ScmpAction, ScmpArgCompare, ScmpCompareOp, ScmpFilterContext, ScmpSyscall};
 use nix::libc;
-use std::os::unix::ffi::OsStrExt;
 
 pub fn load_seccomp_rules(rule_name: &str) -> Result<(), ()> {
     match rule_name {

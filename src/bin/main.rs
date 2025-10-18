@@ -1,7 +1,7 @@
 use clap::Parser;
 use judger::{run, Config};
 
-const VERSION: &str = "2.1.1";
+const VERSION: &str = "0.1.0";
 
 #[derive(Parser, Debug)]
 #[command(name = "judger", version = VERSION, about = "A Rust-based code execution judger.")]

@@ -2,6 +2,7 @@ use serde::Serialize;
 
 mod seccomp;
 mod utils;
+mod logger;
 
 use nix::sys::resource::{Resource, setrlimit};
 use nix::unistd::{ForkResult, Gid, Uid, execve, fork, setgid, setuid};
@@ -13,7 +14,8 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::Duration;
 use nix::libc;
-use nix::sys::signal::{Signal};
+use nix::sys::signal::Signal;
+pub use crate::logger::Logger;
 use crate::utils::{get_time_us};
 
 /// Configuration for the judger.
@@ -38,9 +40,20 @@ pub struct Config {
     pub gid: u32,
 }
 
+impl Config {
+    pub(crate) fn check(&self) -> bool {
+        !((self.max_cpu_time < 1 && self.max_cpu_time != -1) ||
+            (self.max_real_time < 1 && self.max_real_time != -1) ||
+            (self.max_stack < 1) ||
+            (self.max_memory < 1 && self.max_memory != -1) ||
+            (self.max_process_number < 1 && self.max_process_number != -1) ||
+            (self.max_output_size < 1 && self.max_output_size != -1))
+    }
+}
+
 
 #[derive(Debug, Serialize)]
-pub struct Result {
+pub struct RunResult {
     cpu_time: i32,
     real_time: i32,
     memory: i64,
@@ -49,6 +62,21 @@ pub struct Result {
     error: i32,
     result: i32,
 }
+
+impl RunResult {
+    pub fn new() -> Self {
+        RunResult {
+            cpu_time: 0,
+            real_time: 0,
+            memory: 0,
+            signal: 0,
+            exit_code: 0,
+            error: 0,
+            result: 0,
+        }
+    }
+}
+
 
 #[allow(dead_code)]
 #[derive(Debug)]
@@ -79,21 +107,41 @@ enum ResultCode {
 
 
 /// Run the judger with the given configuration.
-pub fn run(config: &Config) -> Result {
+pub fn run(config: &Config) -> Result<RunResult, String> {
+    let mut logger = Logger::new(&config.log_path).map_err(
+        |e| format!("Failed to open log file {}: {:?}", &config.log_path, e)
+    )?;
+    let mut result = RunResult::new();
+
+    let uid = Uid::current();
+    if !uid.is_root() {
+        result.error = ErrorCode::RootRequired as i32;
+        logger.write(
+            0,
+            file!(),
+            line!(),
+            format_args!("Error: Root privileges are required to run the judger."),
+        ).map_err(
+            |e| format!("Failed to write to log file: {:?}", e))?;
+        return Ok(result);
+    }
+
+    if !config.check() {
+        result.error = ErrorCode::InvalidConfig as i32;
+        logger.write(
+            0,
+            file!(),
+            line!(),
+            format_args!("Error: Invalid configuration provided."),
+        ).map_err(
+            |e| format!("Failed to write to log file: {:?}", e))?;
+        return Ok(result);
+    }
+
     let start_time = get_time_us();
 
     match unsafe { fork() } {
         Ok(ForkResult::Parent { child, .. }) => {
-            let mut result = Result {
-                cpu_time: 0,
-                real_time: 0,
-                memory: 0,
-                signal: 0,
-                exit_code: 0,
-                error: 0,
-                result: 0,
-            };
-
             let cancel_flag = Arc::new(AtomicBool::new(false));
             if config.max_real_time != -1 {
                 let child_pid = child.clone();
@@ -112,7 +160,7 @@ pub fn run(config: &Config) -> Result {
             let wait_pid = unsafe { libc::wait4(child.as_raw(), &mut status, 0, &mut rusage) };
             if wait_pid == -1 {
                 result.error = ErrorCode::WaitFailed as i32;
-                return result;
+                return Ok(result);
             }
 
             let real_time = (get_time_us() - start_time) / 1000;
@@ -154,9 +202,9 @@ pub fn run(config: &Config) -> Result {
                     }
                 }
             }
-            result
+            Ok(result)
         }
-        Ok(ForkResult::Child) => match child_process(config) {
+        Ok(ForkResult::Child) => match child_process(config, logger) {
             Ok(_) => std::process::exit(0),
             Err(e) => {
                 eprintln!("Child process failed: {:?}", e);
@@ -164,7 +212,7 @@ pub fn run(config: &Config) -> Result {
             }
         },
         Err(_) => {
-            let mut result = Result {
+            let mut result = RunResult {
                 cpu_time: 0,
                 real_time: 0,
                 memory: 0,
@@ -174,12 +222,12 @@ pub fn run(config: &Config) -> Result {
                 result: 0,
             };
             result.error = ErrorCode::ForkFailed as i32;
-            result
+            Ok(result)
         }
     }
 }
 
-pub fn child_process(config: &Config) -> std::result::Result<(), ErrorCode> {
+pub fn child_process(config: &Config, mut logger: Logger) -> Result<(), ErrorCode> {
     if config.max_stack != -1 {
         setrlimit(
             Resource::RLIMIT_STACK,
@@ -224,16 +272,34 @@ pub fn child_process(config: &Config) -> std::result::Result<(), ErrorCode> {
 
     let input_file = File::open(&config.input_path).map_err(|_| ErrorCode::Dup2Failed)?;
     if unsafe { libc::dup2(input_file.as_raw_fd(), 0) } == -1 {
+        logger.write(
+            0,
+            file!(),
+            line!(),
+            format_args!("Error: Failed to redirect standard input."),
+        ).map_err(|_| ErrorCode::Dup2Failed)?;
         return Err(ErrorCode::Dup2Failed);
     }
 
     let output_file = File::create(&config.output_path).map_err(|_| ErrorCode::Dup2Failed)?;
     if unsafe { libc::dup2(output_file.as_raw_fd(), 1) } == -1 {
+        logger.write(
+            0,
+            file!(),
+            line!(),
+            format_args!("Error: Failed to redirect standard output."),
+        ).map_err(|_| ErrorCode::Dup2Failed)?;
         return Err(ErrorCode::Dup2Failed);
     }
 
     let error_file = File::create(&config.error_path).map_err(|_| ErrorCode::Dup2Failed)?;
     if unsafe { libc::dup2(error_file.as_raw_fd(), 2) } == -1 {
+        logger.write(
+            0,
+            file!(),
+            line!(),
+            format_args!("Error: Failed to redirect standard error."),
+        ).map_err(|_| ErrorCode::Dup2Failed)?;
         return Err(ErrorCode::Dup2Failed);
     }
 
@@ -255,7 +321,6 @@ pub fn child_process(config: &Config) -> std::result::Result<(), ErrorCode> {
         .iter()
         .map(|e| CString::new(e.as_str()).unwrap())
         .collect();
-
     execve(&exe_path, &args, &env).map_err(|_| ErrorCode::ExecveFailed)?;
 
     Ok(())
