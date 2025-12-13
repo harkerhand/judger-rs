@@ -25,8 +25,9 @@ pub enum LogLevel {
 /// ```rust
 ///  use judger::Logger;
 ///  use std::fmt::Arguments;
-///  let mut logger = Logger::new("app.log").expect("Failed to create logger");
-///  logger.write(2, file!(), line!(), format_args!("This is an info message")).expect("Failed to write log");
+///  use judger::LogLevel;
+///  let mut logger = Logger::new("judger.log").expect("Failed to create logger");
+///  logger.write(LogLevel::Info, file!(), line!(), format_args!("This is an info message")).expect("Failed to write log");
 /// ```
 /// # Errors
 /// The `new` method returns an `io::Error` if the log file cannot be created or opened.
@@ -43,7 +44,7 @@ impl Logger {
     /// # Example
     /// ```rust
     ///  use judger::Logger;
-    ///  let logger = Logger::new("app.log").expect("Failed to create logger");
+    ///  let logger = Logger::new("judger.log").expect("Failed to create logger");
     /// ```
     /// # Arguments
     /// * `filename` - The path to the log file.
@@ -65,7 +66,7 @@ impl Logger {
     ///  use judger::Logger;
     ///  use std::fmt::Arguments;
     ///  use judger::LogLevel;
-    ///  let mut logger = Logger::new("app.log").expect("Failed to create logger");
+    ///  let mut logger = Logger::new("judger.log").expect("Failed to create logger");
     ///  logger.write(LogLevel::Info, file!(), line!(), format_args!("This is an info message")).expect("Failed to write log");
     /// ```
     /// # Arguments

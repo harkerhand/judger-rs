@@ -1,4 +1,3 @@
-use crate::error::ResultCode;
 use crate::{Config, ErrorCode, LogLevel, Logger, child_process};
 use nix::libc;
 use nix::sys::signal::Signal;
@@ -11,13 +10,18 @@ use std::time::{Duration, SystemTime};
 
 #[derive(Debug, Serialize, Default)]
 pub struct RunResult {
-    cpu_time: i32,
-    real_time: i32,
-    memory: i64,
-    signal: i32,
-    exit_code: i32,
-    error: String,
-    result: String,
+    /// CPU time used in milliseconds.
+    pub cpu_time: i32,
+    /// Real time used in milliseconds.
+    pub real_time: i32,
+    /// Memory used in bytes.
+    pub memory: i64,
+    /// Signal that terminated the process.
+    pub signal: i32,
+    /// Exit code of the process.
+    pub exit_code: i32,
+    /// Error code if any error occurred during execution.
+    pub result: ErrorCode,
 }
 
 /// Runs the judger with the given configuration.
@@ -33,7 +37,7 @@ pub fn run(config: &Config) -> Result<RunResult, String> {
 
     let uid = Uid::current();
     if !uid.is_root() {
-        result.error = ErrorCode::RootRequired.to_string();
+        result.result = ErrorCode::RootRequired;
         logger
             .write(
                 LogLevel::Fatal,
@@ -46,7 +50,7 @@ pub fn run(config: &Config) -> Result<RunResult, String> {
     }
 
     if !config.check() {
-        result.error = ErrorCode::InvalidConfig.to_string();
+        result.result = ErrorCode::InvalidConfig;
         logger
             .write(
                 LogLevel::Fatal,
@@ -77,7 +81,7 @@ pub fn run(config: &Config) -> Result<RunResult, String> {
             let mut rusage: libc::rusage = unsafe { std::mem::zeroed() };
             let wait_pid = unsafe { libc::wait4(child.as_raw(), &mut status, 0, &mut rusage) };
             if wait_pid == -1 {
-                result.error = ErrorCode::WaitFailed.to_string();
+                result.result = ErrorCode::WaitFailed;
                 return Ok(result);
             }
 
@@ -93,7 +97,7 @@ pub fn run(config: &Config) -> Result<RunResult, String> {
             }
 
             if result.signal == Signal::SIGUSR1 as i32 {
-                result.result = ResultCode::SystemError.to_string();
+                result.result = ErrorCode::SystemError;
             } else {
                 result.exit_code = libc::WEXITSTATUS(status);
                 result.cpu_time = (rusage.ru_utime.tv_sec as i64 * 1000
@@ -102,26 +106,26 @@ pub fn run(config: &Config) -> Result<RunResult, String> {
                 result.memory = (rusage.ru_maxrss as i64) * 1024;
 
                 if result.exit_code != 0 {
-                    result.result = ResultCode::RuntimeError.to_string();
+                    result.result = ErrorCode::RuntimeError;
                 }
                 if result.signal == Signal::SIGSEGV as i32 {
                     if config.max_memory != -1 && result.memory > config.max_memory {
-                        result.result = ResultCode::MemoryLimitExceeded.to_string();
+                        result.result = ErrorCode::MemoryLimitExceeded;
                     } else {
-                        result.result = ResultCode::RuntimeError.to_string();
+                        result.result = ErrorCode::RuntimeError;
                     }
                 } else {
                     if result.signal != 0 {
-                        result.result = ResultCode::RuntimeError.to_string();
+                        result.result = ErrorCode::RuntimeError;
                     }
                     if config.max_memory != -1 && result.memory > config.max_memory {
-                        result.result = ResultCode::MemoryLimitExceeded.to_string();
+                        result.result = ErrorCode::MemoryLimitExceeded;
                     }
                     if config.max_real_time != -1 && result.real_time > config.max_real_time {
-                        result.result = ResultCode::RealTimeLimitExceeded.to_string();
+                        result.result = ErrorCode::RealTimeLimitExceeded;
                     }
                     if config.max_cpu_time != -1 && result.cpu_time > config.max_cpu_time {
-                        result.result = ResultCode::CpuTimeLimitExceeded.to_string();
+                        result.result = ErrorCode::CpuTimeLimitExceeded;
                     }
                 }
             }
@@ -135,7 +139,7 @@ pub fn run(config: &Config) -> Result<RunResult, String> {
             }
         },
         Err(_) => Ok(RunResult {
-            error: ErrorCode::ForkFailed.to_string(),
+            result: ErrorCode::ForkFailed,
             ..Default::default()
         }),
     }

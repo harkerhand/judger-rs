@@ -1,14 +1,14 @@
 use judger::{Config, SeccompRuleName, run};
 use std::io::Write;
 
-fn main() {
+#[test]
+fn test_syscall_error() {
     let tmp_file_path = "./main.c";
     let mut file = std::fs::File::create(tmp_file_path).expect("Unable to create file");
     let hello_world_code = r#"#include <stdio.h>
 int main() {
-    char input[1000];
-    scanf("%s", input);
-    printf("Hello %s\n", input);
+    FILE *fp = fopen("unauthorized_write.txt", "w");
+    fprintf(fp, "This write operation should be blocked by seccomp!\n");
     return 0;
 }"#;
     file.write_all(hello_world_code.as_bytes())
@@ -23,11 +23,11 @@ int main() {
         .expect("Unable to write input data");
 
     let _ = std::process::Command::new("gcc")
-        .args([tmp_file_path, "-o", "hello_world"])
+        .args([tmp_file_path, "-o", "syscall_wrong"])
         .output();
 
     let config = Config {
-        exe_path: "hello_world".to_string(),
+        exe_path: "syscall_wrong".to_string(),
         input_path: input_file_path.to_string(),
         output_path: "1.out".to_string(),
         error_path: "1.out".to_string(),
@@ -37,13 +37,13 @@ int main() {
     };
 
     let result = run(&config);
-
-    println!("{:?}", result);
-
+    assert!(result.is_ok());
+    let result = result.unwrap();
+    assert_eq!(result.result, judger::ErrorCode::RuntimeError);
     // clean up
     let _ = std::fs::remove_file(tmp_file_path);
     let _ = std::fs::remove_file(input_file_path);
-    let _ = std::fs::remove_file("hello_world");
+    let _ = std::fs::remove_file("syscall_wrong");
     let _ = std::fs::remove_file("1.out");
     let _ = std::fs::remove_file("1.err");
     let _ = std::fs::remove_file("judger.log");

@@ -54,7 +54,6 @@ fn main() {
         max_stack: args.max_stack.unwrap_or(16 * 1024 * 1024),
         max_process_number: args.max_process_number.unwrap_or(-1),
         max_output_size: args.max_output_size.unwrap_or(-1),
-        memory_limit_check_only: args.memory_limit_check_only.unwrap_or(false),
         exe_path: args.exe_path,
         input_path: args.input_path.unwrap_or_else(|| "/dev/stdin".to_string()),
         output_path: args

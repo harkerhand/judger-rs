@@ -23,7 +23,7 @@ pub fn child_process(config: &Config, mut logger: Logger) -> Result<(), ErrorCod
         )
         .map_err(|_| ErrorCode::SetrlimitFailed)?;
     }
-    if !config.memory_limit_check_only && config.max_memory != -1 {
+    if config.max_memory != -1 {
         setrlimit(
             Resource::RLIMIT_AS,
             (config.max_memory * 2) as u64,
@@ -34,8 +34,8 @@ pub fn child_process(config: &Config, mut logger: Logger) -> Result<(), ErrorCod
     if config.max_cpu_time != -1 {
         setrlimit(
             Resource::RLIMIT_CPU,
-            (config.max_cpu_time / 1000) as u64,
-            (config.max_cpu_time / 1000) as u64,
+            (config.max_cpu_time / 1000 + 1) as u64,
+            (config.max_cpu_time / 1000 + 1) as u64,
         )
         .map_err(|_| ErrorCode::SetrlimitFailed)?;
     }

@@ -18,9 +18,8 @@
 //!     max_real_time: 2000,
 //!     max_memory: 128 * 1024 * 1024,
 //!     max_stack: 32 * 1024 * 1024,
-//!     max_process_number: 200,
+//!     max_process_number: 1,
 //!     max_output_size: 10000,
-//!     memory_limit_check_only: false,
 //!     exe_path: "hello_world".to_string(),
 //!     input_path: "1.in".to_string(),
 //!     output_path: "1.out".to_string(),
@@ -64,12 +63,12 @@ mod logger;
 mod runner;
 mod seccomp;
 
-pub use crate::child::child_process;
-pub use crate::error::ErrorCode;
-pub use crate::logger::LogLevel;
-pub use crate::logger::Logger;
-pub use crate::runner::run;
-pub use crate::seccomp::SeccompRuleName;
+pub use child::child_process;
+pub use error::ErrorCode;
+pub use logger::LogLevel;
+pub use logger::Logger;
+pub use runner::run;
+pub use seccomp::SeccompRuleName;
 
 /// Configuration for the judger.
 #[derive(Debug)]
@@ -86,8 +85,6 @@ pub struct Config {
     pub max_process_number: i32,
     /// Maximum output size in bytes (-1 for unlimited).
     pub max_output_size: i64,
-    /// If true, only check memory limit without enforcing it.
-    pub memory_limit_check_only: bool,
     /// Path to the executable.
     pub exe_path: String,
     /// Path to the input file.
@@ -118,5 +115,28 @@ impl Config {
             || (self.max_memory < 1 && self.max_memory != -1)
             || (self.max_process_number < 1 && self.max_process_number != -1)
             || (self.max_output_size < 1 && self.max_output_size != -1))
+    }
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            max_cpu_time: 1000,
+            max_real_time: 2000,
+            max_memory: 128 * 1024 * 1024,
+            max_stack: 32 * 1024 * 1024,
+            max_process_number: 1,
+            max_output_size: 10000,
+            exe_path: Default::default(),
+            input_path: Default::default(),
+            output_path: Default::default(),
+            error_path: Default::default(),
+            args: Default::default(),
+            env: Default::default(),
+            log_path: Default::default(),
+            seccomp_rule_name: Some(SeccompRuleName::General),
+            uid: 0,
+            gid: 0,
+        }
     }
 }
