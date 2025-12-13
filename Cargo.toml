@@ -11,9 +11,15 @@ keywords = ["sandbox", "security", "seccomp", "container", "isolation"]
 categories = ["development-tools"]
 
 [dependencies]
-clap = { version = "4.5.49", features = ["derive"] }
+clap = { version = "4.5.53", features = ["derive"] }
 libseccomp = "0.4.0"
-nix = { version = "0.30.1", features = ["resource", "process", "user", "fs", "signal"] }
+nix = { version = "0.30.1", features = [
+    "resource",
+    "process",
+    "user",
+    "fs",
+    "signal",
+] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 

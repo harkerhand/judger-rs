@@ -117,7 +117,7 @@ fn log_write_fmt(
     std::fmt::write(&mut msg_buf, args).ok();
 
     let entry = format!(
-        "{:?} [{}] [{}:{}]{}\n",
+        "{:?} [{}] [{}:{}] {}\n",
         level, datetime, source_filename, line, msg_buf
     );
 

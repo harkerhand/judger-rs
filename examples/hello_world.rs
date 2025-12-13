@@ -31,7 +31,7 @@ int main(int argc, char *argv[]) {
         max_real_time: 2000,
         max_memory: 128 * 1024 * 1024,
         max_stack: 32 * 1024 * 1024,
-        max_process_number: 200,
+        max_process_number: 1,
         max_output_size: 10000,
         memory_limit_check_only: false,
         exe_path: "hello_world".to_string(),
