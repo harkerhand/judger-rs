@@ -1,8 +1,8 @@
-use nix::libc;
-use nix::libc::timeval;
+use clap::ValueEnum;
+use std::fmt::Display;
 
 /// Error codes for the judger.
-#[derive(Debug)]
+#[derive(Debug, ValueEnum, Clone)]
 pub enum ErrorCode {
     /// Operation completed successfully.
     Success = 0,
@@ -30,20 +30,39 @@ pub enum ErrorCode {
     SpjError = -11,
 }
 
+impl Display for ErrorCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let description = self
+            .to_possible_value()
+            .and_then(|v| v.get_help().map(|help| help.to_string()))
+            .unwrap_or("Unknown error".to_string());
+        write!(f, "{}", description)
+    }
+}
+
+#[derive(ValueEnum, Clone)]
 pub(crate) enum ResultCode {
     #[allow(dead_code)]
+    /// Wrong answer
     WrongAnswer = -1,
+    /// Cpu time limit exceeded
     CpuTimeLimitExceeded = 1,
+    /// Real time limit exceeded
     RealTimeLimitExceeded = 2,
+    /// Memory limit exceeded
     MemoryLimitExceeded = 3,
+    /// Runtime error
     RuntimeError = 4,
+    /// System error
     SystemError = 5,
 }
 
-pub(crate) fn get_time_us() -> u64 {
-    unsafe {
-        let mut tv: timeval = std::mem::zeroed();
-        libc::gettimeofday(&mut tv, std::ptr::null_mut());
-        (tv.tv_sec * 1000 * 1000 + tv.tv_usec) as u64
+impl Display for ResultCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let description = self
+            .to_possible_value()
+            .and_then(|v| v.get_help().map(|h| h.to_string()))
+            .unwrap_or("Unknown result".to_string());
+        write!(f, "{}", description)
     }
 }

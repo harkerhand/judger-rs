@@ -186,8 +186,9 @@ fn apply_seccomp_filter(
     sys_calls: &[&str],
     action: ScmpAction,
 ) -> Result<(), ()> {
-    Ok(for syscall_name in sys_calls.iter() {
+    for syscall_name in sys_calls.iter() {
         let syscall = ScmpSyscall::from_name(syscall_name).map_err(|_| ())?;
         filter.add_rule(action, syscall).map_err(|_| ())?;
-    })
+    }
+    Ok(())
 }

@@ -1,4 +1,4 @@
-use judger::{Config, Logger, child_process, SeccompRuleName};
+use judger::{Config, Logger, SeccompRuleName, child_process};
 
 fn main() {
     let config = Config {

@@ -23,13 +23,10 @@ pub enum LogLevel {
 /// The logger supports four log levels: FATAL, WARNING, INFO, and DEBUG.
 /// # Example
 /// ```rust
-/// use judger::Logger;
-/// use std::fmt::Arguments;
-///
-/// fn main() {
-///     let mut logger = Logger::new("app.log").expect("Failed to create logger");
-///     logger.write(2, file!(), line!(), format_args!("This is an info message")).expect("Failed to write log");
-/// }
+///  use judger::Logger;
+///  use std::fmt::Arguments;
+///  let mut logger = Logger::new("app.log").expect("Failed to create logger");
+///  logger.write(2, file!(), line!(), format_args!("This is an info message")).expect("Failed to write log");
 /// ```
 /// # Errors
 /// The `new` method returns an `io::Error` if the log file cannot be created or opened.
@@ -45,10 +42,8 @@ impl Logger {
     /// Returns an `io::Error` if the file cannot be created or opened.
     /// # Example
     /// ```rust
-    /// use judger::Logger;
-    /// fn main() {
-    ///     let logger = Logger::new("app.log").expect("Failed to create logger");
-    /// }
+    ///  use judger::Logger;
+    ///  let logger = Logger::new("app.log").expect("Failed to create logger");
     /// ```
     /// # Arguments
     /// * `filename` - The path to the log file.
@@ -67,13 +62,11 @@ impl Logger {
     /// Returns an `io::Error` if writing to the log file fails or if an invalid log level is provided.
     /// # Example
     /// ```rust
-    /// use judger::Logger;
-    /// use std::fmt::Arguments;
-    /// use judger::LogLevel;
-    /// fn main() {
-    ///     let mut logger = Logger::new("app.log").expect("Failed to create logger");
-    ///     logger.write(LogLevel::Info, file!(), line!(), format_args!("This is an info message")).expect("Failed to write log");
-    /// }
+    ///  use judger::Logger;
+    ///  use std::fmt::Arguments;
+    ///  use judger::LogLevel;
+    ///  let mut logger = Logger::new("app.log").expect("Failed to create logger");
+    ///  logger.write(LogLevel::Info, file!(), line!(), format_args!("This is an info message")).expect("Failed to write log");
     /// ```
     /// # Arguments
     /// * `level` - The log level of the entry.

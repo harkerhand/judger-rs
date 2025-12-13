@@ -102,18 +102,28 @@ pub fn child_process(config: &Config, mut logger: Logger) -> Result<(), ErrorCod
         seccomp::load_seccomp_rules(rule_name).map_err(|_| ErrorCode::LoadSeccompFailed)?;
     }
 
-    let exe_path = CString::new(config.exe_path.clone()).unwrap();
-    let args: Vec<CString> = config
-        .args
-        .iter()
-        .map(|arg| CString::new(arg.as_str()).unwrap())
-        .collect();
-    let env: Vec<CString> = config
-        .env
-        .iter()
-        .map(|e| CString::new(e.as_str()).unwrap())
-        .collect();
-    execve(&exe_path, &args, &env).map_err(|_| ErrorCode::ExecveFailed)?;
-
+    if let Ok(exe_path) = CString::new(config.exe_path.clone()) {
+        let args: Vec<CString> = config
+            .args
+            .iter()
+            .map(|arg| CString::new(arg.as_str()).unwrap_or_default())
+            .collect();
+        let env: Vec<CString> = config
+            .env
+            .iter()
+            .map(|e| CString::new(e.as_str()).unwrap_or_default())
+            .collect();
+        execve(&exe_path, &args, &env).map_err(|_| ErrorCode::ExecveFailed)?;
+    } else {
+        logger
+            .write(
+                LogLevel::Fatal,
+                file!(),
+                line!(),
+                format_args!("Error: Invalid executable path."),
+            )
+            .map_err(|_| ErrorCode::ExecveFailed)?;
+        return Err(ErrorCode::ExecveFailed);
+    }
     Ok(())
 }

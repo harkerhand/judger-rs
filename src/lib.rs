@@ -1,4 +1,7 @@
 #![deny(missing_docs)]
+#![deny(clippy::unwrap_used)]
+#![deny(clippy::expect_used)]
+#![deny(clippy::panic)]
 //! A Rust library for sandboxed code execution and resource limitation.
 //! This library provides functionalities to run untrusted code with specified resource limits,
 //! such as CPU time, memory usage, and process count. It also supports seccomp filtering for enhanced security.
@@ -9,30 +12,28 @@
 //! - Error handling with specific error codes
 //! # Example
 //! ```rust
-//! use judger::{Config, SeccompRuleName, run};
-//! fn main() {
-//!     let config = Config {
-//!         max_cpu_time: 1000,
-//!         max_real_time: 2000,
-//!         max_memory: 128 * 1024 * 1024,
-//!         max_stack: 32 * 1024 * 1024,
-//!         max_process_number: 200,
-//!         max_output_size: 10000,
-//!         memory_limit_check_only: false,
-//!         exe_path: "hello_world".to_string(),
-//!         input_path: "1.in".to_string(),
-//!         output_path: "1.out".to_string(),
-//!         error_path: "1.err".to_string(),
-//!         args: vec![],
-//!         env: vec![],
-//!         log_path: "judger.log".to_string(),
-//!         seccomp_rule_name: Some(SeccompRuleName::CCpp),
-//!         uid: 0,
-//!         gid: 0,
-//!     };
-//!     let result = run(&config);
-//!     println!("{:?}", result);
-//! }
+//!  use judger::{Config, SeccompRuleName, run};
+//!  let config = Config {
+//!     max_cpu_time: 1000,
+//!     max_real_time: 2000,
+//!     max_memory: 128 * 1024 * 1024,
+//!     max_stack: 32 * 1024 * 1024,
+//!     max_process_number: 200,
+//!     max_output_size: 10000,
+//!     memory_limit_check_only: false,
+//!     exe_path: "hello_world".to_string(),
+//!     input_path: "1.in".to_string(),
+//!     output_path: "1.out".to_string(),
+//!     error_path: "1.err".to_string(),
+//!     args: vec![],
+//!     env: vec![],
+//!     log_path: "judger.log".to_string(),
+//!     seccomp_rule_name: Some(SeccompRuleName::CCpp),
+//!     uid: 0,
+//!     gid: 0,
+//!  };
+//!  let result = run(&config);
+//!  println!("{:?}", result);
 //! ```
 //! # Modules
 //! - `child`: Handles the child process execution and resource limiting.
@@ -58,17 +59,17 @@
 //! Developed by [harkerhand](https://github.com/harkerhand).
 
 mod child;
+mod error;
 mod logger;
 mod runner;
 mod seccomp;
-mod utils;
 
 pub use crate::child::child_process;
+pub use crate::error::ErrorCode;
 pub use crate::logger::LogLevel;
 pub use crate::logger::Logger;
 pub use crate::runner::run;
 pub use crate::seccomp::SeccompRuleName;
-pub use crate::utils::ErrorCode;
 
 /// Configuration for the judger.
 #[derive(Debug)]
