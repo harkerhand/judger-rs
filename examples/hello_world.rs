@@ -36,7 +36,7 @@ int main() {
         ..Default::default()
     };
 
-    let result = run(&config);
+    let result = run(&config, None);
 
     println!("{:?}", result);
 

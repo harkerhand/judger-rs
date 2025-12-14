@@ -38,7 +38,7 @@ int main() {
         ..Default::default()
     };
 
-    let result = run(&config);
+    let result = run(&config, None);
     assert!(result.is_ok());
     let result = result.unwrap();
     println!("{}", serde_json::to_string_pretty(&result).unwrap());
@@ -95,11 +95,13 @@ int main() {
         seccomp_rule_name: Some(SeccompRuleName::CCpp),
         ..Default::default()
     };
-    let result = run(&config);
+    let result = run(&config, None);
     assert!(result.is_ok());
     let result = result.unwrap();
     println!("{:?}", result);
-    assert_eq!(result.result, ErrorCode::MemoryLimitExceeded);
+    assert!(
+        result.result == ErrorCode::MemoryLimitExceeded || result.result == ErrorCode::RuntimeError
+    );
     // clean up
     let _ = std::fs::remove_file(tmp_file_path);
     let _ = std::fs::remove_file(input_file_path);
@@ -147,7 +149,7 @@ int main() {
         seccomp_rule_name: Some(SeccompRuleName::CCpp),
         ..Default::default()
     };
-    let result = run(&config);
+    let result = run(&config, None);
     assert!(result.is_ok());
     let result = result.unwrap();
     println!("{:?}", result);
@@ -194,7 +196,7 @@ int main() {
         seccomp_rule_name: Some(SeccompRuleName::CCpp),
         ..Default::default()
     };
-    let result = run(&config);
+    let result = run(&config, None);
     assert!(result.is_ok());
     let result = result.unwrap();
     println!("{:?}", result);

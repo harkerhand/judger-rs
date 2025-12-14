@@ -3,6 +3,8 @@ use nix::libc;
 use nix::sys::signal::Signal;
 use nix::unistd::{ForkResult, Uid, fork};
 use serde::Serialize;
+use std::os::fd::{AsRawFd, FromRawFd};
+use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
@@ -28,9 +30,10 @@ pub struct RunResult {
 /// Returns a `RunResult` containing the execution results.
 /// # Arguments
 /// * `config` - A reference to the `Config` struct containing the judger configuration
+/// * `interactor` - An optional `PathBuf` for the interactor program
 /// # Returns
 /// * `Result<RunResult, String>` - On success, returns `Ok(RunResult)`. On failure, returns `Err(String)` with an error message.
-pub fn run(config: &Config) -> Result<RunResult, String> {
+pub fn run(config: &Config, interactor: Option<PathBuf>) -> Result<RunResult, String> {
     let mut logger = Logger::new(&config.log_path)
         .map_err(|e| format!("Failed to open log file {}: {:?}", &config.log_path, e))?;
     let mut result = RunResult::default();
@@ -63,8 +66,20 @@ pub fn run(config: &Config) -> Result<RunResult, String> {
     }
 
     let start_time = SystemTime::now();
+    let (interactor_stdin, interactor_stdout) = nix::unistd::pipe()
+        .map_err(|e| format!("Failed to create pipe for interactor: {:?}", e))?;
+    let (user_stdin, user_stdout) = nix::unistd::pipe()
+        .map_err(|e| format!("Failed to create pipe for user program: {:?}", e))?;
     match unsafe { fork() } {
         Ok(ForkResult::Parent { child, .. }) => {
+            let inter_child = interactor.and_then(|path| {
+                std::process::Command::new(path)
+                    .args(vec![&config.input_path, &config.output_path])
+                    .stdin(unsafe { std::process::Stdio::from_raw_fd(user_stdout.as_raw_fd()) })
+                    .stdout(unsafe { std::process::Stdio::from_raw_fd(user_stdin.as_raw_fd()) })
+                    .spawn()
+                    .ok()
+            });
             let cancel_flag = Arc::new(AtomicBool::new(false));
             if config.max_real_time != -1 {
                 let cancel_flag_clone = Arc::clone(&cancel_flag);
@@ -73,6 +88,9 @@ pub fn run(config: &Config) -> Result<RunResult, String> {
                     thread::sleep(Duration::from_millis(max_real_time as u64));
                     if !cancel_flag_clone.load(Ordering::SeqCst) {
                         let _ = nix::sys::signal::kill(child, Signal::SIGKILL);
+                        if let Some(mut inter) = inter_child {
+                            let _ = inter.kill();
+                        }
                     }
                 });
             }
@@ -131,7 +149,11 @@ pub fn run(config: &Config) -> Result<RunResult, String> {
             }
             Ok(result)
         }
-        Ok(ForkResult::Child) => match child_process(config, logger) {
+        Ok(ForkResult::Child) => match child_process(
+            config,
+            logger,
+            interactor.map(|_| (interactor_stdout.as_raw_fd(), interactor_stdin.as_raw_fd())),
+        ) {
             Ok(_) => std::process::exit(0),
             Err(e) => {
                 eprintln!("Child process failed: {:?}", e);

@@ -36,7 +36,7 @@ int main() {
         ..Default::default()
     };
 
-    let result = run(&config);
+    let result = run(&config, None);
     assert!(result.is_ok());
     let result = result.unwrap();
     assert_eq!(result.result, judger::ErrorCode::RuntimeError);

@@ -31,7 +31,7 @@
 //!     uid: 0,
 //!     gid: 0,
 //!  };
-//!  let result = run(&config);
+//!  let result = run(&config, None);
 //!  println!("{:?}", result);
 //! ```
 //! # Modules

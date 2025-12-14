@@ -68,7 +68,7 @@ fn main() {
         gid: args.gid.unwrap_or(65534),
     };
 
-    let result = run(&config);
+    let result = run(&config, None);
 
     println!("{}", serde_json::to_string_pretty(&result).unwrap());
 }

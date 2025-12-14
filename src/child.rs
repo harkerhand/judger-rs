@@ -4,7 +4,7 @@ use nix::sys::resource::{Resource, setrlimit};
 use nix::unistd::{Gid, Uid, execve, setgid, setuid};
 use std::ffi::CString;
 use std::fs::File;
-use std::os::fd::AsRawFd;
+use std::os::fd::{AsRawFd, RawFd};
 
 /// Function to be executed in the child process.
 /// Sets resource limits, redirects standard I/O,
@@ -14,7 +14,11 @@ use std::os::fd::AsRawFd;
 /// * `logger` - Logger instance for logging errors.
 /// # Returns
 /// * `Result<(), ErrorCode>` - Ok on success, Err with ErrorCode on failure.
-pub fn child_process(config: &Config, mut logger: Logger) -> Result<(), ErrorCode> {
+pub fn child_process(
+    config: &Config,
+    mut logger: Logger,
+    fds: Option<(RawFd, RawFd)>,
+) -> Result<(), ErrorCode> {
     if config.max_stack != -1 {
         setrlimit(
             Resource::RLIMIT_STACK,
@@ -56,8 +60,22 @@ pub fn child_process(config: &Config, mut logger: Logger) -> Result<(), ErrorCod
         .map_err(|_| ErrorCode::SetrlimitFailed)?;
     }
 
-    let input_file = File::open(&config.input_path).map_err(|_| ErrorCode::Dup2Failed)?;
-    if unsafe { libc::dup2(input_file.as_raw_fd(), 0) } == -1 {
+    let (input_fd, output_fd, _input_file, _output_file) = match fds {
+        Some((inf, outf)) => (inf, outf, None, None),
+        None => {
+            let input_file = File::open(&config.input_path).map_err(|_| ErrorCode::Dup2Failed)?;
+            let output_file =
+                File::create(&config.output_path).map_err(|_| ErrorCode::Dup2Failed)?;
+            (
+                input_file.as_raw_fd(),
+                output_file.as_raw_fd(),
+                Some(input_file),
+                Some(output_file),
+            )
+        }
+    };
+
+    if unsafe { libc::dup2(input_fd, 0) } == -1 {
         logger
             .write(
                 LogLevel::Fatal,
@@ -69,8 +87,7 @@ pub fn child_process(config: &Config, mut logger: Logger) -> Result<(), ErrorCod
         return Err(ErrorCode::Dup2Failed);
     }
 
-    let output_file = File::create(&config.output_path).map_err(|_| ErrorCode::Dup2Failed)?;
-    if unsafe { libc::dup2(output_file.as_raw_fd(), 1) } == -1 {
+    if unsafe { libc::dup2(output_fd, 1) } == -1 {
         logger
             .write(
                 LogLevel::Fatal,
