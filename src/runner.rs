@@ -1,12 +1,13 @@
-use crate::{Config, ErrorCode, LogLevel, Logger, child_process};
+use crate::{child_process, Config, ErrorCode, LogLevel, Logger};
+use nix::fcntl::OFlag;
 use nix::libc;
 use nix::sys::signal::Signal;
-use nix::unistd::{ForkResult, Uid, fork};
+use nix::unistd::{fork, ForkResult, Uid};
 use serde::Serialize;
 use std::os::fd::{AsRawFd, FromRawFd};
 use std::path::PathBuf;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::thread;
 use std::time::{Duration, SystemTime};
 
@@ -66,17 +67,21 @@ pub fn run(config: &Config, interactor: Option<PathBuf>) -> Result<RunResult, St
     }
 
     let start_time = SystemTime::now();
-    let (interactor_stdin, interactor_stdout) = nix::unistd::pipe()
+    let (user_stdin, inter_stdout) = nix::unistd::pipe2(OFlag::O_CLOEXEC)
         .map_err(|e| format!("Failed to create pipe for interactor: {:?}", e))?;
-    let (user_stdin, user_stdout) = nix::unistd::pipe()
+    let (inter_stdin, user_stdout) = nix::unistd::pipe2(OFlag::O_CLOEXEC)
         .map_err(|e| format!("Failed to create pipe for user program: {:?}", e))?;
     match unsafe { fork() } {
-        Ok(ForkResult::Parent { child, .. }) => {
+        Ok(ForkResult::Parent { child }) => {
             let inter_child = interactor.and_then(|path| {
+                let stdin = unsafe { std::process::Stdio::from_raw_fd(inter_stdin.as_raw_fd()) };
+                let stdout = unsafe { std::process::Stdio::from_raw_fd(inter_stdout.as_raw_fd()) };
+                std::mem::forget(inter_stdin);
+                std::mem::forget(inter_stdout);
                 std::process::Command::new(path)
                     .args(vec![&config.input_path, &config.output_path])
-                    .stdin(unsafe { std::process::Stdio::from_raw_fd(user_stdout.as_raw_fd()) })
-                    .stdout(unsafe { std::process::Stdio::from_raw_fd(user_stdin.as_raw_fd()) })
+                    .stdin(stdin)
+                    .stdout(stdout)
                     .spawn()
                     .ok()
             });
@@ -152,7 +157,9 @@ pub fn run(config: &Config, interactor: Option<PathBuf>) -> Result<RunResult, St
         Ok(ForkResult::Child) => match child_process(
             config,
             logger,
-            interactor.map(|_| (interactor_stdout.as_raw_fd(), interactor_stdin.as_raw_fd())),
+            interactor.map(|_|
+                (user_stdin.as_raw_fd(), user_stdout.as_raw_fd())
+            ),
         ) {
             Ok(_) => std::process::exit(0),
             Err(e) => {

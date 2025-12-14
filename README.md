@@ -43,7 +43,7 @@ Here is a simple example of how to use `judger` to run a command with resource l
 Make sure to add `judger` to your `Cargo.toml`:
 
 ```toml
-[dependencies]  
+[dependencies]
 judger = "0.1"
 ```
 
@@ -53,25 +53,15 @@ Then, on your main.rs:
 use judger::{Config, SeccompRuleName, run};
 fn main() {
     let config = Config {
-        max_cpu_time: 1000,
-        max_real_time: 2000,
-        max_memory: 128 * 1024 * 1024,
-        max_stack: 32 * 1024 * 1024,
-        max_process_number: 200,
-        max_output_size: 10000,
-        memory_limit_check_only: false,
         exe_path: "hello_world".to_string(),
         input_path: "1.in".to_string(),
         output_path: "1.out".to_string(),
         error_path: "1.err".to_string(),
-        args: vec![],
-        env: vec![],
         log_path: "judger.log".to_string(),
         seccomp_rule_name: Some(SeccompRuleName::CCpp),
-        uid: 0,
-        gid: 0,
+        ..Default::default()
     };
-    let result = run(&config);
+    let result = run(&config, None);
     println!("{:?}", result);
 }
 ```

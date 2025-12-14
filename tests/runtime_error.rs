@@ -3,7 +3,7 @@ use std::io::Write;
 
 #[test]
 fn test_syscall_error() {
-    let tmp_file_path = "./main.c";
+    let tmp_file_path = "./syscall.c";
     let mut file = std::fs::File::create(tmp_file_path).expect("Unable to create file");
     let hello_world_code = r#"#include <stdio.h>
 int main() {
