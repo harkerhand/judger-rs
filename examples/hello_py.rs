@@ -1,4 +1,4 @@
-use judger::{run, Config, SeccompRuleName};
+use judger::{Config, SeccompRuleName, run};
 use std::io::Write;
 
 fn main() {
@@ -18,7 +18,6 @@ print(f"Hello, {name}!")
     input_file
         .write_all(input_data.as_bytes())
         .expect("Unable to write input data");
-
 
     let config = Config {
         exe_path: "/usr/bin/python3".to_string(),

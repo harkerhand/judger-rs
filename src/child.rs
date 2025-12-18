@@ -1,7 +1,7 @@
-use crate::{seccomp, Config, ErrorCode, LogLevel, Logger};
+use crate::{Config, ErrorCode, LogLevel, Logger, seccomp};
 use nix::libc;
-use nix::sys::resource::{setrlimit, Resource};
-use nix::unistd::{execve, setgid, setuid, Gid, Uid};
+use nix::sys::resource::{Resource, setrlimit};
+use nix::unistd::{Gid, Uid, execve, setgid, setuid};
 use std::ffi::CString;
 use std::fs::File;
 use std::io::{stderr, stdin, stdout};
@@ -26,7 +26,7 @@ pub fn child_process(
             config.max_stack as u64,
             config.max_stack as u64,
         )
-            .map_err(|_| ErrorCode::SetrlimitFailed)?;
+        .map_err(|_| ErrorCode::SetrlimitFailed)?;
     }
     if config.max_memory != -1 {
         setrlimit(
@@ -34,7 +34,7 @@ pub fn child_process(
             (config.max_memory * 2) as u64,
             (config.max_memory * 2) as u64,
         )
-            .map_err(|_| ErrorCode::SetrlimitFailed)?;
+        .map_err(|_| ErrorCode::SetrlimitFailed)?;
     }
     if config.max_cpu_time != -1 {
         setrlimit(
@@ -42,7 +42,7 @@ pub fn child_process(
             (config.max_cpu_time / 1000 + 1) as u64,
             (config.max_cpu_time / 1000 + 1) as u64,
         )
-            .map_err(|_| ErrorCode::SetrlimitFailed)?;
+        .map_err(|_| ErrorCode::SetrlimitFailed)?;
     }
     if config.max_process_number != -1 {
         setrlimit(
@@ -50,7 +50,7 @@ pub fn child_process(
             config.max_process_number as u64,
             config.max_process_number as u64,
         )
-            .map_err(|_| ErrorCode::SetrlimitFailed)?;
+        .map_err(|_| ErrorCode::SetrlimitFailed)?;
     }
     if config.max_output_size != -1 {
         setrlimit(
@@ -58,7 +58,7 @@ pub fn child_process(
             config.max_output_size as u64,
             config.max_output_size as u64,
         )
-            .map_err(|_| ErrorCode::SetrlimitFailed)?;
+        .map_err(|_| ErrorCode::SetrlimitFailed)?;
     }
 
     let (input_fd, output_fd, _input_file, _output_file) = match fds {

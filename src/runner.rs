@@ -1,13 +1,13 @@
-use crate::{child_process, Config, ErrorCode, LogLevel, Logger};
+use crate::{Config, ErrorCode, LogLevel, Logger, child_process};
 use nix::fcntl::OFlag;
 use nix::libc;
 use nix::sys::signal::Signal;
-use nix::unistd::{fork, ForkResult, Uid};
+use nix::unistd::{ForkResult, Uid, fork};
 use serde::Serialize;
 use std::os::fd::{AsRawFd, FromRawFd};
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
 use std::time::{Duration, SystemTime};
 
@@ -157,9 +157,7 @@ pub fn run(config: &Config, interactor: Option<PathBuf>) -> Result<RunResult, St
         Ok(ForkResult::Child) => match child_process(
             config,
             logger,
-            interactor.map(|_|
-                (user_stdin.as_raw_fd(), user_stdout.as_raw_fd())
-            ),
+            interactor.map(|_| (user_stdin.as_raw_fd(), user_stdout.as_raw_fd())),
         ) {
             Ok(_) => std::process::exit(0),
             Err(e) => {

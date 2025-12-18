@@ -1,4 +1,4 @@
-use judger::{run, Config, SeccompRuleName};
+use judger::{Config, SeccompRuleName, run};
 use std::io::Write;
 
 fn main() {
