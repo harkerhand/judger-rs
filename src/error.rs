@@ -30,6 +30,8 @@ pub enum ErrorCode {
     ExecveFailed = -10,
     /// Special judge program error.
     SpjError = -11,
+    /// System error
+    SystemError = -12,
     /// Cpu time limit exceeded
     CpuTimeLimitExceeded = 1,
     /// Real time limit exceeded
@@ -38,10 +40,8 @@ pub enum ErrorCode {
     MemoryLimitExceeded = 3,
     /// Runtime error
     RuntimeError = 4,
-    /// System error
-    SystemError = 5,
     /// Wrong answer
-    WrongAnswer = 6,
+    WrongAnswer = 5,
 }
 
 impl Display for ErrorCode {
