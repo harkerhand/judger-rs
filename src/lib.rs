@@ -71,7 +71,7 @@ pub use runner::run;
 pub use seccomp::SeccompRuleName;
 
 /// Configuration for the judger.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Config {
     /// Maximum CPU time in milliseconds (-1 for unlimited).
     pub max_cpu_time: i32,
