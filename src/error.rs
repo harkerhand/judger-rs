@@ -1,55 +1,79 @@
-use clap::ValueEnum;
 use serde::Serialize;
 use std::fmt::Display;
 
 /// Error codes for the judger.
-#[derive(Debug, ValueEnum, Clone, Serialize, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Serialize, Default, PartialEq, Eq)]
 pub enum ErrorCode {
     /// Operation completed successfully.
     #[default]
-    Success = 0,
+    Success,
     /// Configuration is invalid.
-    InvalidConfig = -1,
+    InvalidConfig,
     /// Forking a new process failed.
-    ForkFailed = -2,
+    ForkFailed,
     /// Compiling the source code failed.
-    CompileError = -3,
+    CompileError,
     /// Waiting for a process failed.
-    WaitFailed = -4,
+    WaitFailed,
     /// Root privileges are required.
-    RootRequired = -5,
+    RootRequired,
     /// Loading seccomp rules failed.
-    LoadSeccompFailed = -6,
+    LoadSeccompFailed,
     /// Setting resource limits failed.
-    SetrlimitFailed = -7,
+    SetrlimitFailed,
     /// Duplicating file descriptors failed.
-    Dup2Failed = -8,
+    Dup2Failed,
     /// Setting user ID failed.
-    SetuidFailed = -9,
+    SetuidFailed,
     /// Executing the target program failed.
-    ExecveFailed = -10,
+    ExecveFailed,
     /// Special judge program error.
-    SpjError = -11,
+    SpjError,
     /// System error
-    SystemError = -12,
+    SystemError,
     /// Cpu time limit exceeded
-    CpuTimeLimitExceeded = 1,
+    CpuTimeLimitExceeded,
     /// Real time limit exceeded
-    RealTimeLimitExceeded = 2,
+    RealTimeLimitExceeded,
     /// Memory limit exceeded
-    MemoryLimitExceeded = 3,
+    MemoryLimitExceeded,
     /// Runtime error
-    RuntimeError = 4,
-    /// Wrong answer
-    WrongAnswer = 5,
+    RuntimeError,
+    /// Interactor produced wrong answer
+    WrongAnswer(String),
 }
 
 impl Display for ErrorCode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let description = self
-            .to_possible_value()
-            .and_then(|v| v.get_help().map(|help| help.to_string()))
-            .unwrap_or("Unknown error".to_string());
-        write!(f, "{}", description)
+        match self {
+            ErrorCode::WrongAnswer(msg) => write!(f, "Wrong Answer: {}", msg),
+            _ => write!(f, "{:?}", self),
+        }
+    }
+}
+
+impl ErrorCode {
+    /// Convert the ErrorCode to its corresponding i32 value.
+    pub fn to_i32(&self) -> i32 {
+        match self {
+            ErrorCode::Success => 0,
+            ErrorCode::InvalidConfig => -1,
+            ErrorCode::ForkFailed => -2,
+            ErrorCode::CompileError => -3,
+            ErrorCode::WaitFailed => -4,
+            ErrorCode::RootRequired => -5,
+            ErrorCode::LoadSeccompFailed => -6,
+            ErrorCode::SetrlimitFailed => -7,
+            ErrorCode::Dup2Failed => -8,
+            ErrorCode::SetuidFailed => -9,
+            ErrorCode::ExecveFailed => -10,
+            ErrorCode::SpjError => -11,
+            ErrorCode::SystemError => -12,
+            ErrorCode::CpuTimeLimitExceeded => 1,
+            ErrorCode::RealTimeLimitExceeded => 2,
+            ErrorCode::MemoryLimitExceeded => 3,
+            ErrorCode::RuntimeError => 4,
+            ErrorCode::WrongAnswer(_) => 5,
+        }
     }
 }

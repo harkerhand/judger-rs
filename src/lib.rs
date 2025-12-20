@@ -67,6 +67,7 @@ pub use child::child_process;
 pub use error::ErrorCode;
 pub use logger::LogLevel;
 pub use logger::Logger;
+pub use runner::RunResult;
 pub use runner::run;
 pub use seccomp::SeccompRuleName;
 

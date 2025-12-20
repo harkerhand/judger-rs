@@ -6,11 +6,13 @@ use nix::unistd::{ForkResult, Uid, fork};
 use serde::Serialize;
 use std::os::fd::{AsRawFd, FromRawFd};
 use std::path::PathBuf;
-use std::sync::Arc;
+use std::process::Stdio;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::{Duration, SystemTime};
 
+/// Result of the program
 #[derive(Debug, Serialize, Default)]
 pub struct RunResult {
     /// CPU time used in milliseconds.
@@ -74,17 +76,20 @@ pub fn run(config: &Config, interactor: Option<PathBuf>) -> Result<RunResult, St
     match unsafe { fork() } {
         Ok(ForkResult::Parent { child }) => {
             let inter_child = interactor.and_then(|path| {
-                let stdin = unsafe { std::process::Stdio::from_raw_fd(inter_stdin.as_raw_fd()) };
-                let stdout = unsafe { std::process::Stdio::from_raw_fd(inter_stdout.as_raw_fd()) };
+                let stdin = unsafe { Stdio::from_raw_fd(inter_stdin.as_raw_fd()) };
+                let stdout = unsafe { Stdio::from_raw_fd(inter_stdout.as_raw_fd()) };
                 std::mem::forget(inter_stdin);
                 std::mem::forget(inter_stdout);
                 std::process::Command::new(path)
                     .args(vec![&config.input_path, &config.output_path])
                     .stdin(stdin)
                     .stdout(stdout)
+                    .stderr(Stdio::piped())
                     .spawn()
                     .ok()
             });
+            let shared_child = Arc::new(Mutex::new(inter_child));
+            let shared_child_clone = shared_child.clone();
             let cancel_flag = Arc::new(AtomicBool::new(false));
             if config.max_real_time != -1 {
                 let cancel_flag_clone = Arc::clone(&cancel_flag);
@@ -93,7 +98,9 @@ pub fn run(config: &Config, interactor: Option<PathBuf>) -> Result<RunResult, St
                     thread::sleep(Duration::from_millis(max_real_time as u64));
                     if !cancel_flag_clone.load(Ordering::SeqCst) {
                         let _ = nix::sys::signal::kill(child, Signal::SIGKILL);
-                        if let Some(mut inter) = inter_child {
+                        if let Ok(mut guard) = shared_child.lock()
+                            && let Some(inter) = guard.as_mut()
+                        {
                             let _ = inter.kill();
                         }
                     }
@@ -152,6 +159,26 @@ pub fn run(config: &Config, interactor: Option<PathBuf>) -> Result<RunResult, St
                     }
                 }
             }
+            if let Ok(mut guard) = shared_child_clone.lock()
+                && let Some(inter) = guard.as_mut()
+                && let Some(mut stderr) = inter.stderr.take()
+            {
+                let mut err_output = String::new();
+                use std::io::Read;
+                let _ = stderr.read_to_string(&mut err_output);
+                if !err_output.is_empty() {
+                    logger
+                        .write(
+                            LogLevel::Fatal,
+                            file!(),
+                            line!(),
+                            format_args!("Interactor stderr: {}", err_output),
+                        )
+                        .map_err(|e| format!("Failed to write to log file: {:?}", e))?;
+                    result.result = ErrorCode::WrongAnswer(err_output);
+                }
+            }
+
             Ok(result)
         }
         Ok(ForkResult::Child) => match child_process(
@@ -162,7 +189,7 @@ pub fn run(config: &Config, interactor: Option<PathBuf>) -> Result<RunResult, St
             Ok(_) => std::process::exit(0),
             Err(e) => {
                 eprintln!("Child process failed: {:?}", e);
-                std::process::exit(e as i32);
+                std::process::exit(e.to_i32());
             }
         },
         Err(_) => Ok(RunResult {
