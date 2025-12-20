@@ -4,16 +4,17 @@ use std::path::PathBuf;
 
 #[test]
 fn test_interactor() {
-    let tmp_file_path = "./user.c";
+    let tmp_file_path = "./user.cpp";
     let mut file = std::fs::File::create(tmp_file_path).expect("Unable to create file");
-    let hello_world_code = r#"#include <stdio.h>
-int main() {
-    int a, b;
-    while(scanf("%d %d", &a, &b) != EOF) {
-        printf("%d\n", a + b);
-        fflush(stdout);
+    let hello_world_code = r#"#include<bits/stdc++.h>
+int main(){
+    int n;
+    std::cin >> n;
+    while(n--){
+        int a, b;
+        std::cin >> a >> b;
+        std::cout << a + b << std::endl;
     }
-    return 0;
 }"#;
     file.write_all(hello_world_code.as_bytes())
         .expect("Unable to write data");
@@ -26,7 +27,7 @@ int main() {
         .write_all(input_data.as_bytes())
         .expect("Unable to write input data");
 
-    let _ = std::process::Command::new("gcc")
+    let _ = std::process::Command::new("g++")
         .args([tmp_file_path, "-o", "user"])
         .output();
 
@@ -57,16 +58,17 @@ int main() {
 
 #[test]
 fn test_interactor_wa() {
-    let tmp_file_path = "./user_wrong.c";
+    let tmp_file_path = "./user_wrong.cpp";
     let mut file = std::fs::File::create(tmp_file_path).expect("Unable to create file");
-    let hello_world_code = r#"#include <stdio.h>
-int main() {
-    int a, b;
-    while(scanf("%d %d", &a, &b) != EOF) {
-        printf("%d\n", a - b);
-        fflush(stdout);
+    let hello_world_code = r#"#include<bits/stdc++.h>
+int main(){
+    int n;
+    std::cin >> n;
+    while(n--){
+        int a, b;
+        std::cin >> a >> b;
+        std::cout << a - b << std::endl;
     }
-    return 0;
 }"#;
     file.write_all(hello_world_code.as_bytes())
         .expect("Unable to write data");
@@ -79,7 +81,7 @@ int main() {
         .write_all(input_data.as_bytes())
         .expect("Unable to write input data");
 
-    let _ = std::process::Command::new("gcc")
+    let _ = std::process::Command::new("g++")
         .args([tmp_file_path, "-o", "user_wrong"])
         .output();
 

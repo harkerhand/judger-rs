@@ -9,6 +9,7 @@ int main(int argc, char *argv[]) {
 
     // reads number of queries from test (input) file
     int n = inf.readInt();
+    cout << n << endl; // writes number of queries to the solution
     for (int i = 0; i < n; i++) {
         // reads query from test (input) file
         int a = inf.readInt();
@@ -23,7 +24,4 @@ int main(int argc, char *argv[]) {
             quitf(_wa, "Query %d: expected %d, found %d", i + 1, a + b, result);
         }
     }
-
-    // just message
-    quitf(_ok, "%d queries processed", n);
 }
