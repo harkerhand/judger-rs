@@ -127,7 +127,7 @@ impl Default for Config {
             max_memory: 128 * 1024 * 1024,
             max_stack: 32 * 1024 * 1024,
             max_process_number: 1,
-            max_output_size: 10000,
+            max_output_size: 1000000,
             exe_path: Default::default(),
             input_path: Default::default(),
             output_path: Default::default(),
