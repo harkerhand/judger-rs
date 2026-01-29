@@ -1,6 +1,6 @@
 [package]
 name = "judger"
-version = "0.5.1"
+version = "0.5.2"
 edition = "2024"
 authors = ["harkerhand <harkerhand@outlook.com>"]
 description = "A sandboxed environment for running untrusted code safely."
@@ -13,7 +13,7 @@ categories = ["development-tools"]
 [dependencies]
 clap = { version = "4.5.53", features = ["derive"] }
 libseccomp = "0.4.0"
-nix = { version = "0.30.1", features = [
+nix = { version = "0.31.1", features = [
     "resource",
     "process",
     "user",

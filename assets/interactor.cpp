@@ -23,5 +23,6 @@ int main(int argc, char *argv[]) {
         if (result != a + b) {
             quitf(_wa, "Query %d: expected %d, found %d", i + 1, a + b, result);
         }
+        quitf(_ok, "");
     }
 }

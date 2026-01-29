@@ -161,21 +161,27 @@ pub fn run(config: &Config, interactor: Option<PathBuf>) -> Result<RunResult, St
             }
             if let Ok(mut guard) = shared_child_clone.lock()
                 && let Some(inter) = guard.as_mut()
-                && let Some(mut stderr) = inter.stderr.take()
             {
-                let mut err_output = String::new();
-                use std::io::Read;
-                let _ = stderr.read_to_string(&mut err_output);
-                if !err_output.is_empty() {
-                    logger
-                        .write(
-                            LogLevel::Fatal,
-                            file!(),
-                            line!(),
-                            format_args!("Interactor stderr: {}", err_output),
-                        )
-                        .map_err(|e| format!("Failed to write to log file: {:?}", e))?;
-                    result.result = ErrorCode::WrongAnswer(err_output);
+                let status = inter
+                    .wait()
+                    .map_err(|e| format!("Failed to wait for interactor process: {:?}", e))?;
+                if !status.success()
+                    && let Some(mut stderr) = inter.stderr.take()
+                {
+                    let mut err_output = String::new();
+                    use std::io::Read;
+                    let _ = stderr.read_to_string(&mut err_output);
+                    if !err_output.is_empty() {
+                        logger
+                            .write(
+                                LogLevel::Fatal,
+                                file!(),
+                                line!(),
+                                format_args!("Interactor stderr: {}", err_output),
+                            )
+                            .map_err(|e| format!("Failed to write to log file: {:?}", e))?;
+                        result.result = ErrorCode::WrongAnswer(err_output);
+                    }
                 }
             }
 
