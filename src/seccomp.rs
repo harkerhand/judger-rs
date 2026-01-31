@@ -15,6 +15,8 @@ pub enum SeccompRuleName {
     Node,
     /// Python seccomp rules.
     Python,
+    /// Java seccomp rules.
+    Java,
     /// General seccomp rules.
     General,
 }
@@ -26,6 +28,7 @@ pub fn load_seccomp_rules(rule_name: &SeccompRuleName) -> Result<(), ()> {
         SeccompRuleName::Golang => golang_seccomp_rules(),
         SeccompRuleName::Node => node_seccomp_rules(),
         SeccompRuleName::Python => python_seccomp_rules(),
+        SeccompRuleName::Java => java_seccomp_rules(),
         SeccompRuleName::General => general_seccomp_rules(),
     }
 }
@@ -169,6 +172,16 @@ fn python_seccomp_rules() -> Result<(), ()> {
         .add_rule_conditional(ScmpAction::KillProcess, openat_sys, &[cmp_openat_rw])
         .map_err(|_| ())?;
 
+    filter.load().map_err(|_| ())?;
+    Ok(())
+}
+
+fn java_seccomp_rules() -> Result<(), ()> {
+    let syscalls_blacklist = ["fork", "vfork", "kill", "execveat"];
+
+    let mut filter = ScmpFilterContext::new(ScmpAction::Allow).map_err(|_| ())?;
+
+    apply_seccomp_filter(&mut filter, &syscalls_blacklist, ScmpAction::KillProcess)?;
     filter.load().map_err(|_| ())?;
     Ok(())
 }
