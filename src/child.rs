@@ -28,7 +28,7 @@ pub fn child_process(
         )
         .map_err(|_| ErrorCode::SetrlimitFailed)?;
     }
-    if config.max_memory != -1 {
+    if !config.exe_path.contains("java") && config.max_memory != -1 {
         setrlimit(
             Resource::RLIMIT_AS,
             (config.max_memory * 2) as u64,

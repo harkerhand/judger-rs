@@ -39,7 +39,9 @@ public class Main {
             "-XX:CompressedClassSpaceSize=64M".to_string(),
             tmp_file_path.to_string(),
         ],
-        max_memory: -1,
+        // 对于java 真实的内存限制是INFINITY，因为java本身会有额外的内存开销
+        // 这里的内存限制主要是为了在程序运行后得到MLE状态
+        max_memory: 128 * 1024 * 1024,
         max_cpu_time: 2000,
         max_real_time: 4000,
         input_path: input_file_path.to_string(),

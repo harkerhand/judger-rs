@@ -177,7 +177,7 @@ fn python_seccomp_rules() -> Result<(), ()> {
 }
 
 fn java_seccomp_rules() -> Result<(), ()> {
-    let syscalls_blacklist = ["fork", "vfork", "kill", "execveat"];
+    let syscalls_blacklist = ["fork", "vfork", "execveat"];
 
     let mut filter = ScmpFilterContext::new(ScmpAction::Allow).map_err(|_| ())?;
 

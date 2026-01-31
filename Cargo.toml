@@ -1,6 +1,6 @@
 [package]
 name = "judger"
-version = "0.6.0"
+version = "0.6.1"
 edition = "2024"
 authors = ["harkerhand <harkerhand@outlook.com>"]
 description = "A sandboxed environment for running untrusted code safely."
